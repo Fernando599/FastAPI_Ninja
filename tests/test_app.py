@@ -1,14 +1,15 @@
 from http import HTTPStatus
 
-from fastapi.testclient import TestClient
 
-from fastapi_zero.app import app
+def test_root_deve_retornar_ola_fastapi(client):  # Arrange
+    response = client.get('/')  # Act
+
+    assert response.json() == {'message': 'Olá FastAPI'}  # Assert
+    assert response.status_code == HTTPStatus.OK  # Assert
 
 
-def test_root_deve_retornar_ola_fastapi():
-    client = TestClient(app) # Arrange
+def test_exercicio_deve_retornar_ola_mundo(client):
+    response = client.get('/exercicio')
 
-    response = client.get('/') # Act
-
-    assert response.json() == {'message': 'Olá FastAPI'} # Assert
-    assert response.status_code == HTTPStatus.OK # Assert
+    assert 'Olá Mundo' in response.text
+    assert response.status_code == HTTPStatus.OK
