@@ -1,3 +1,7 @@
+# project stuff
+database.db
+.env
+
 # Python cache
 __pycache__/
 *.pyc
