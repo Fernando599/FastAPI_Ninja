@@ -1,7 +1,5 @@
 from http import HTTPStatus
 
-from fastapi_zero.app import database
-
 
 def test_root_deve_retornar_ola_fastapi(client):  # Arrange
     response = client.get('/')  # Act
@@ -26,7 +24,31 @@ def test_create_user(client, user_alice):
         'email': 'alice@example.com',
         'id': 1,
     }
-    database.clear()
+
+
+def test_user_already_exists(client, user_alice):
+    response_1 = client.post('/users/', json=user_alice)
+    assert response_1.status_code == HTTPStatus.CREATED
+
+    response_2 = client.post('/users/', json=user_alice)
+
+    assert response_2.status_code == HTTPStatus.CONFLICT
+    assert response_2.json() == {'detail': 'Username already exists'}
+
+
+def test_email_already_exists(client, user_bob):
+    client.post('/users/', json=user_bob)
+
+    user_with_same_email = {
+        'username': 'outronome',
+        'email': 'bob@example.com',
+        'password': 'secret',
+    }
+
+    response_2 = client.post('/users/', json=user_with_same_email)
+
+    assert response_2.status_code == HTTPStatus.CONFLICT
+    assert response_2.json() == {'detail': 'Email already exists'}
 
 
 def test_list_users(client, user_alice, user_bob):
@@ -42,8 +64,6 @@ def test_list_users(client, user_alice, user_bob):
             {'username': 'bob', 'email': 'bob@example.com', 'id': 2},
         ],
     }
-
-    database.clear()
 
 
 def test_update_user(client, user_alice):
@@ -65,7 +85,37 @@ def test_update_user(client, user_alice):
         'id': 1,
     }
 
-    database.clear()
+
+def test_update_user_with_same_username(client, user_alice, user_bob):
+    client.post('/users/', json=user_alice)
+    client.post('/users/', json=user_bob)
+
+    user_with_same_username = {
+        'username': 'alice',
+        'email': 'outroemail@gmail.com',
+        'password': 'secret',
+    }
+
+    response = client.put('/users/2', json=user_with_same_username)
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Username already exists'}
+
+
+def test_update_user_with_same_email(client, user_alice, user_bob):
+    client.post('/users/', json=user_alice)
+    client.post('/users/', json=user_bob)
+
+    user_with_same_email = {
+        'username': 'outronome',
+        'email': 'alice@example.com',
+        'password': 'secret',
+    }
+
+    response = client.put('/users/2', json=user_with_same_email)
+
+    assert response.status_code == HTTPStatus.CONFLICT
+    assert response.json() == {'detail': 'Email already exists'}
 
 
 def test_update_user_invalid_id(client):
@@ -88,13 +138,7 @@ def test_delete_user(client, user_alice):
     response = client.delete('/users/1')
 
     assert response.status_code == HTTPStatus.OK
-    assert response.json() == {
-        'username': 'alice',
-        'email': 'alice@example.com',
-        'id': 1,
-    }
-
-    database.clear()
+    assert response.json() == {'message': 'User deleted'}
 
 
 def test_delete_user_invalid_id(client):
@@ -116,8 +160,6 @@ def test_get_one_user_in_list(client, user_alice, user_bob):
         'email': 'alice@example.com',
         'id': 1,
     }
-
-    database.clear()
 
 
 def test_get_one_user_invalid_id(client):
